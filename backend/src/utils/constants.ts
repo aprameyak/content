@@ -1,0 +1,12 @@
+export const MIN_VIDEO_DURATION = 15; // seconds
+export const MAX_VIDEO_DURATION = 100; // seconds
+export const MAX_DESCRIPTION_LENGTH = 200;
+export const COMMENT_EDIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+export const VIDEO_DELETE_LOCK_HOURS = 24;
+export const UPLOAD_SESSION_EXPIRY_HOURS = 24;
+export const STREAK_MILESTONES = [7, 30, 100, 365, 1000] as const;
+export const FEED_PAGE_SIZE = 20;
+export const SEARCH_LIMIT = 20;
+export const NOTIFICATION_PAGE_SIZE = 30;
+export const COMMENT_PAGE_SIZE = 30;
+export const FEED_DAYS_LOOKBACK = 7; // show last 7 days of posts in feed

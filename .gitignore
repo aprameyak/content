@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+.expo/
+web-build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Prisma generated
+backend/node_modules/.prisma/
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# React Native
+app/.expo/
+app/web-build/
+
+# TypeScript
+*.tsbuildinfo

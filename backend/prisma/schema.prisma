@@ -1,0 +1,449 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum PrivacyMode {
+  PUBLIC
+  FOLLOWERS_ONLY
+  PRIVATE
+  CLOSE_FRIENDS_ONLY
+}
+
+enum VideoStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETE
+  FAILED
+  EXPIRED
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+enum ReactionType {
+  HEART
+  CLAP
+  FIRE
+  SMILE
+  CRY
+  MUSCLE
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum CommunityRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum NotificationType {
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_FOLLOWER
+  FRIEND_POSTED
+  COMMENT
+  REPLY
+  REACTION
+  STREAK_REMINDER
+  DAILY_REMINDER
+  STREAK_MILESTONE
+  SYSTEM
+}
+
+enum ReportType {
+  VIOLENCE
+  NUDITY
+  SPAM
+  HARASSMENT
+  ILLEGAL_CONTENT
+  SELF_HARM
+  CSAM
+  IMPERSONATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                   String      @id @default(cuid())
+  username             String      @unique
+  email                String      @unique
+  passwordHash         String
+  name                 String
+  bio                  String?     @db.VarChar(160)
+  profilePictureUrl    String?
+  birthday             DateTime    @db.Date
+  timezone             String      @default("UTC")
+  privacyMode          PrivacyMode @default(PUBLIC)
+  isVerified           Boolean     @default(false)
+  isActive             Boolean     @default(true)
+  isSuspended          Boolean     @default(false)
+  suspendedAt          DateTime?
+  suspendedReason      String?
+  twoFactorEnabled     Boolean     @default(false)
+  twoFactorSecret      String?
+  currentStreak        Int         @default(0)
+  longestStreak        Int         @default(0)
+  totalPostsDays       Int         @default(0)
+  lastPostedDate       String?
+  notifyFriendPosted   Boolean     @default(true)
+  notifyComments       Boolean     @default(true)
+  notifyReactions      Boolean     @default(true)
+  notifyFollowers      Boolean     @default(true)
+  notifyDailyReminder  Boolean     @default(true)
+  notifyStreakReminder Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+
+  videos                  Video[]
+  comments                Comment[]
+  reactions               Reaction[]
+  sessions                Session[]
+  devices                 Device[]
+  following               Follow[]          @relation("follower")
+  followers               Follow[]          @relation("following")
+  communityMemberships    CommunityMember[]
+  sentNotifications       Notification[]    @relation("notificationSender")
+  receivedNotifications   Notification[]    @relation("notificationRecipient")
+  reports                 Report[]          @relation("reporter")
+  reportedReports         Report[]          @relation("reportedUser")
+  uploadSessions          UploadSession[]
+  blockedUsers            Block[]           @relation("blocker")
+  blockedByUsers          Block[]           @relation("blocked")
+  mutedUsers              Mute[]            @relation("muter")
+  mutedByUsers            Mute[]            @relation("muted")
+  favorites               Favorite[]        @relation("favoriteOwner")
+  favoritedBy             Favorite[]        @relation("favoriteTarget")
+  closeFriends            CloseFriend[]     @relation("closeFriendOwner")
+  addedToCloseFriends     CloseFriend[]     @relation("closeFriendTarget")
+  createdCommunities      Community[]
+
+  @@index([username])
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  deviceId     String?
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Device {
+  id          String    @id @default(cuid())
+  userId      String
+  fcmToken    String?
+  apnsToken   String?
+  platform    Platform
+  appVersion  String?
+  osVersion   String?
+  deviceModel String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fcmToken])
+  @@index([userId])
+  @@map("devices")
+}
+
+model Video {
+  id             String      @id @default(cuid())
+  userId         String
+  storageKey     String      @unique
+  thumbnailKey   String?
+  duration       Int
+  fileSize       Int
+  mimeType       String      @default("video/mp4")
+  width          Int?
+  height         Int?
+  description    String?     @db.VarChar(200)
+  location       String?
+  mood           String?
+  weather        String?
+  postDate       String
+  privacyMode    PrivacyMode @default(PUBLIC)
+  isHidden       Boolean     @default(false)
+  isArchived     Boolean     @default(false)
+  viewCount      Int         @default(0)
+  status         VideoStatus @default(PROCESSING)
+  canDeleteAfter DateTime
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  reactions      Reaction[]
+  reports        Report[]
+  communityPosts CommunityPost[]
+
+  @@unique([userId, postDate])
+  @@index([userId])
+  @@index([postDate])
+  @@index([status])
+  @@index([createdAt])
+  @@map("videos")
+}
+
+model UploadSession {
+  id            String       @id @default(cuid())
+  userId        String
+  storageKey    String       @unique
+  uploadId      String?
+  status        UploadStatus @default(PENDING)
+  fileSize      Int?
+  uploadedBytes Int          @default(0)
+  mimeType      String       @default("video/mp4")
+  expiresAt     DateTime
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("upload_sessions")
+}
+
+model Comment {
+  id            String   @id @default(cuid())
+  videoId       String
+  userId        String
+  parentId      String?
+  body          String   @db.VarChar(500)
+  isEdited      Boolean  @default(false)
+  editableUntil DateTime
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  video   Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("replies", fields: [parentId], references: [id])
+  replies Comment[] @relation("replies")
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Reaction {
+  id        String       @id @default(cuid())
+  videoId   String
+  userId    String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([videoId])
+  @@map("reactions")
+}
+
+model Follow {
+  id          String       @id @default(cuid())
+  followerId  String
+  followingId String
+  status      FollowStatus @default(ACCEPTED)
+  createdAt   DateTime     @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@map("blocks")
+}
+
+model Mute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+
+  muter User @relation("muter", fields: [muterId], references: [id], onDelete: Cascade)
+  muted User @relation("muted", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@map("mutes")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  ownerId   String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  owner  User @relation("favoriteOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  target User @relation("favoriteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, targetId])
+  @@index([ownerId])
+  @@map("favorites")
+}
+
+model CloseFriend {
+  id        String   @id @default(cuid())
+  ownerId   String
+  targetId  String
+  createdAt DateTime @default(now())
+
+  owner  User @relation("closeFriendOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  target User @relation("closeFriendTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, targetId])
+  @@index([ownerId])
+  @@map("close_friends")
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.VarChar(500)
+  imageUrl    String?
+  isPrivate   Boolean  @default(false)
+  creatorId   String
+  memberCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members      CommunityMember[]
+  posts        CommunityPost[]
+  creator_user User @relation(fields: [creatorId], references: [id])
+
+  @@index([slug])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          String        @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId])
+  @@index([userId])
+  @@map("community_members")
+}
+
+model CommunityPost {
+  id          String   @id @default(cuid())
+  communityId String
+  videoId     String
+  createdAt   DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  video     Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, videoId])
+  @@index([communityId])
+  @@map("community_posts")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  senderId    String?
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient User  @relation("notificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("notificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reportedUserId String?
+  videoId        String?
+  commentId      String?
+  type           ReportType
+  description    String?      @db.VarChar(1000)
+  status         ReportStatus @default(PENDING)
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  resolution     String?
+  createdAt      DateTime     @default(now())
+
+  reporter     User  @relation("reporter", fields: [reporterId], references: [id])
+  reportedUser User? @relation("reportedUser", fields: [reportedUserId], references: [id])
+  video        Video? @relation(fields: [videoId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("reports")
+}

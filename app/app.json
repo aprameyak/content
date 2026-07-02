@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Chronicle",
+    "slug": "chronicle",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.chronicle.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Chronicle needs camera access to record your daily video.",
+        "NSMicrophoneUsageDescription": "Chronicle needs microphone access to record audio with your video.",
+        "NSLocationWhenInUseUsageDescription": "Chronicle can optionally tag your video with your current location.",
+        "NSPhotoLibraryUsageDescription": "Chronicle needs access to your photo library for your profile picture."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.chronicle.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-av",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7C3AED"
+        }
+      ],
+      "expo-secure-store",
+      "expo-location"
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:3000/api/v1"
+    }
+  }
+}

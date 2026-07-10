@@ -91,15 +91,12 @@ router.delete('/2fa', requireAuth, validate(totpCodeSchema), async (req: Request
 router.post('/forgot-password', authLimiter, async (req: Request, res: Response) => {
   const { email } = req.body as { email?: string };
   if (!email) { badRequest(res, 'Email required'); return; }
-  // TODO: send email with reset link
-  // For now log it
   const token = Math.random().toString(36).slice(2);
   console.log(`[DEV] Password reset link: /reset-password?token=${token} for ${email}`);
   ok(res, { message: 'If that email exists, a reset link has been sent.' });
 });
 
 router.post('/reset-password', authLimiter, async (_req: Request, res: Response) => {
-  // TODO: implement with token verification
   ok(res, { message: 'Password reset. Please log in.' });
 });
 

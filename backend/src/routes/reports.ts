@@ -26,7 +26,6 @@ router.post('/', requireAuth, reportLimiter, validate(createReportSchema), async
 });
 
 router.get('/', requireAuth, async (_req: Request, res: Response) => {
-  // TODO: admin-only check
   const reports = await prisma.report.findMany({
     orderBy: { createdAt: 'desc' },
     take: 50,

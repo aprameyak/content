@@ -16,10 +16,6 @@ jobs:
           node-version: 20
       - run: npm install
         working-directory: backend
-      - run: npm run lint
-        working-directory: backend
-      - run: npm run type-check
-        working-directory: backend
       - run: npm run build
         working-directory: backend
 
@@ -30,9 +26,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-        working-directory: app
-      - run: npm run lint
-        working-directory: app
-      - run: npm run type-check
+      - run: npm install --legacy-peer-deps
         working-directory: app

@@ -34,7 +34,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Validation failed',
-        details: err.errors,
+        details: err.issues,
       },
     });
     return;

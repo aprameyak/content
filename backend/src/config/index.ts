@@ -36,7 +36,7 @@ try {
   parsed = envSchema.parse(process.env);
 } catch (err) {
   if (err instanceof z.ZodError) {
-    const missing = err.errors.map((e) => `  ${e.path.join('.')}: ${e.message}`).join('\n');
+    const missing = err.issues.map((e) => `  ${e.path.join('.')}: ${e.message}`).join('\n');
     console.error(`\n[Config] Missing or invalid environment variables:\n${missing}\n`);
     process.exit(1);
   }

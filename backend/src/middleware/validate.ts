@@ -11,7 +11,7 @@ export function validate(schema: ZodSchema, target: Target = 'body') {
       unprocessable(
         res,
         'Validation failed',
-        (result.error as ZodError).errors,
+        (result.error as ZodError).issues,
       );
       return;
     }
